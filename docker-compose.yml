@@ -1,0 +1,26 @@
+version: "2.3"
+services:
+  registers: &registers
+    build:
+      context: .
+    command: >
+      /bin/bash -c "registers migrate && registers runserver 0:8000"
+    environment:
+      - SSH_AUTH_SOCK=$DOCKER_SSH_AUTH_SOCK
+    env_file:
+      - .env
+    image: $DOCKER_IMAGE
+    runtime: $DOCKER_RUNTIME
+    shm_size: $DOCKER_SHM_SIZE
+    volumes:
+      - .:/root/workspace
+      - $HOST_DATADRIVE:/root/datadrive
+      - $SSH_AUTH_SOCK:/ssh-agent
+      - /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock
+      - ./registers-json:/root/registers-json
+      - ./db:/usr/share/registers
+  l2cs:
+    <<: *registers
+    command: /bin/bash
+    links:
+      - registers

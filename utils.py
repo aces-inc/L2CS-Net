@@ -39,16 +39,18 @@ def draw_gaze(a,b,c,d,image_in, pitchyaw, thickness=2, color=(255, 255, 0),sclae
     """Draw gaze angle on given image with a given eye positions."""
     image_out = image_in
     (h, w) = image_in.shape[:2]
-    length = w/2
+    length = w/4
     pos = (int(a+c / 2.0), int(b+d / 2.0))
     if len(image_out.shape) == 2 or image_out.shape[2] == 1:
         image_out = cv2.cvtColor(image_out, cv2.COLOR_GRAY2BGR)
-    dx = -length * np.sin(pitchyaw[0]) * np.cos(pitchyaw[1])
-    dy = -length * np.sin(pitchyaw[1])
+    pitch = pitchyaw[0]
+    yaw = pitchyaw[1]
+    dx = -length * np.sin(pitch) * np.cos(yaw)
+    dy = -length * np.sin(yaw)
     cv2.arrowedLine(image_out, tuple(np.round(pos).astype(np.int32)),
                    tuple(np.round([pos[0] + dx, pos[1] + dy]).astype(int)), color,
                    thickness, cv2.LINE_AA, tipLength=0.18)
-    return image_out    
+    return image_out
 
 def select_device(device='', batch_size=None):
     # device = 'cpu' or '0' or '0,1,2,3'
@@ -76,14 +78,14 @@ def select_device(device='', batch_size=None):
     return torch.device('cuda:0' if cuda else 'cpu')
 
 def spherical2cartesial(x):
-    
+
     output = torch.zeros(x.size(0),3)
     output[:,2] = -torch.cos(x[:,1])*torch.cos(x[:,0])
     output[:,0] = torch.cos(x[:,1])*torch.sin(x[:,0])
     output[:,1] = torch.sin(x[:,1])
 
     return output
-    
+
 def compute_angular_error(input,target):
 
     input = spherical2cartesial(input)
@@ -102,7 +104,7 @@ def softmax_temperature(tensor, temperature):
     result = torch.exp(tensor / temperature)
     result = torch.div(result, torch.sum(result, 1).unsqueeze(1).expand_as(result))
     return result
-   
+
 def git_describe(path=Path(__file__).parent):  # path must be a directory
     # return human-readable git description, i.e. v5.0-5-g3e25f1e https://git-scm.com/docs/git-describe
     s = f'git -C {path} describe --tags --long --always'
@@ -110,5 +112,5 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
         return subprocess.check_output(s, shell=True, stderr=subprocess.STDOUT).decode()[:-1]
     except subprocess.CalledProcessError as e:
         return ''  # not a git repository
-        
+
 
